@@ -116,13 +116,16 @@ class Assets extends AbstractAuthCorporationJob
                     if (in_array($asset->location_flag, StructureBatch::RESOLVABLE_LOCATION_FLAGS) && in_array($asset->location_type, StructureBatch::RESOLVABLE_LOCATION_TYPES)) {
                         $structure_batch->addStructure($asset->location_id);
                     }
-
-                    AssetMapping::make($model, $asset, [
-                        'corporation_id' => function () {
-                            return $this->getCorporationId();
-                        },
-                        'updated_at' => $start,
-                    ])->save();
+                    if ($model->exists){ // This model is already existing, touch the time but dont trigger events.
+                        $model->updated_at = $start;
+                        $model->saveQuietly();
+                    } else {
+                        AssetMapping::make($model, $asset, [
+                            'corporation_id' => function () {
+                                return $this->getCorporationId();
+                            }
+                        ])->save();
+                    }
                 });
             });
 
